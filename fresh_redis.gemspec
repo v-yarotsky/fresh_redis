@@ -18,5 +18,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency("redis", "~> 3.0")
   gem.add_development_dependency("rake")
+  gem.add_development_dependency("minitest")
+  gem.add_development_dependency("minitest-reporters")
 end
 
