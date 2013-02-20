@@ -8,14 +8,17 @@ module FreshRedis
       description "Specify key wildcard to delete all matching keys"
 
       required_argument :key_pattern,
-                        :description => "Foo bar baz",
+                        :description => "pattern for redis KEYS command",
                         :validator => proc { |value| "Key pattern can not be empty" if String(value).empty? }
 
-      BATCH_SIZE = 1000
+      optional_argument :batch_size,
+                        :default => 1000,
+                        :converter => proc { |value| value.to_i },
+                        :validator => proc { |value| "Batch size must be a positive numeric value" unless value > 0 }
 
       def run(redis)
-        puts "Fetching keys like \"#{@arguments[:key_pattern]}\""
-        keys = redis.keys(@arguments[:key_pattern])
+        puts "Fetching keys like \"#{argument(:key_pattern)}\""
+        keys = redis.keys(argument(:key_pattern))
 
         if keys.length == 0
           puts "Nothing to clean"
@@ -24,7 +27,7 @@ module FreshRedis
 
         init_progress(keys.size)
 
-        keys.each_slice(BATCH_SIZE) do |keys_slice|
+        keys.each_slice(argument(:batch_size)) do |keys_slice|
           redis.pipelined { keys_slice.each { |key| redis.del(key) } }
           increment_progress(keys.size, keys_slice.compact.size)
         end

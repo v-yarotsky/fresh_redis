@@ -19,8 +19,7 @@ module FreshRedis
       end
 
       def initialize(arguments = {})
-        check_arguments!(arguments)
-        @arguments = arguments
+        self.arguments = arguments
       end
 
       def description

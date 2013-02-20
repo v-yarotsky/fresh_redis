@@ -10,11 +10,16 @@ module FreshRedis
         @name = String(name)
         @description = String(options[:description])
         @type = options.fetch(:type) { :value }.to_sym
+        @converter_proc = options.fetch(:converter) { proc { |v| v } }
         @validator_proc = options.fetch(:validator) { proc { nil } }
       end
 
-      def validate!(value)
-        error = @validator_proc[value]
+      def value(v)
+        @converter_proc[v]
+      end
+
+      def validate!(v)
+        error = @validator_proc[value(v)]
         unless String(error).empty?
           raise ArgumentError, "Argument #@name is not valid: #{error}"
         end
@@ -25,9 +30,20 @@ module FreshRedis
       end
     end
 
+    class OptionalArgument < Argument
+      def initialize(name, options = {})
+        super
+        @default_value = options[:default]
+      end
+
+      def value(v)
+        v.nil? ? @default_value : super
+      end
+    end
+
     class RequiredArgument < Argument
-      def validate!(value)
-        raise ArgumentError, "Argument #@name is required" if value.nil?
+      def validate!(v)
+        raise ArgumentError, "Argument #@name is required" if value(v).nil?
         super
       end
     end
@@ -47,7 +63,7 @@ module FreshRedis
       end
 
       def optional_argument(name, options = {})
-        arguments[name] = Argument.new(name, options)
+        arguments[name] = OptionalArgument.new(name, options)
       end
 
       def required_argument(name, options = {})
@@ -56,12 +72,25 @@ module FreshRedis
     end
 
     module InstanceMethods
-      def check_arguments!(arguments)
-        self.class.arguments.each do |argument_name, argument|
-          argument.validate! arguments[argument_name]
-        end
+      private
+
+      attr_reader :arguments
+
+      def initialize(*)
+        @arguments = {}
+        super
       end
-      private :check_arguments!
+
+      def arguments=(passed_arguments)
+        self.class.arguments.each do |argument_name, argument_spec|
+          argument_spec.validate! passed_arguments[argument_name]
+        end
+        @arguments = passed_arguments
+      end
+
+      def argument(name)
+        self.class.arguments[name.to_sym].value(arguments[name])
+      end
     end
   end
 
