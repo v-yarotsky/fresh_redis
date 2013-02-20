@@ -12,33 +12,66 @@ class TestCommandArgumentsValidation < FreshRedisTestCase
     end
   end
 
+  def cmd(base_class = TestSlab, &block)
+    Class.new(TestSlab, &block)
+  end
+
   test "ignores unspecified arguments" do
-    assert_not_raises(ArgumentError) do
-      TestSlab.new.validate(:foo => :bar)
-    end
+    assert_not_raises(ArgumentError) { TestSlab.new.validate(:foo => :bar) }
   end
 
   test "raises ArgumentError if validation fails" do
-    klass = Class.new(TestSlab) { check_argument(:foo) { |arg| false } }
+    klass = cmd { optional_argument(:foo, :validator => proc { |v| "Error" }) }
     assert_raises(ArgumentError) { klass.new.validate(:foo => 1) }
   end
 
   test "does not raise ArgumentError if validation does not fail" do
-    klass = Class.new(TestSlab) { check_argument(:foo) { |arg| true } }
+    klass = cmd { optional_argument(:foo, :validator => proc { |v| nil }) }
     assert_not_raises(ArgumentError) { klass.new.validate(:foo => 1) }
   end
 
   test "descendants don't overwrite parent's arguments" do
-    klass1 = Class.new(TestSlab) { check_argument(:foo) { |arg| true } }
-    klass2 = Class.new(klass1) { check_argument(:foo) { |arg| false } }
+    klass1 = cmd { optional_argument(:foo, :validator => proc { |v| nil }) }
+    klass2 = cmd(klass1) { optional_argument(:foo, :validator => proc { |v| "Error" }) }
     assert_not_raises(ArgumentError) { klass1.new.validate(:foo => 1) }
   end
 
   test "error message" do
-    klass = Class.new(TestSlab) { check_argument(:foo, "must be greater than 0") { |v| v > 0 } }
+    klass = cmd { optional_argument(:foo, :validator => proc { |v| "must be greater than 0" unless v > 0 }) }
     assert_raises_with_message(ArgumentError, "Argument foo is not valid: must be greater than 0") do
       klass.new.validate(:foo => -1)
     end
+  end
+
+  test "raises ArgumentError if required argument is absent" do
+    klass = cmd { required_argument(:foo) }
+    assert_raises_with_message(ArgumentError, "Argument foo is required") { klass.new.validate({}) }
+  end
+
+  test "uses validator on requried argument" do
+    klass = cmd { required_argument(:foo, :validator => proc { |v| "SomeError" }) }
+    assert_raises_with_message(ArgumentError, "Argument foo is not valid: SomeError") { klass.new.validate(:foo => 1) }
+  end
+
+  test "arguments are values by default" do
+    klass = cmd { required_argument(:foo) }
+    assert klass.arguments[:foo].value?, "Expected arguments to be values by default"
+  end
+
+  test "arguments can be flags" do
+    klass = cmd { required_argument(:foo, :type => :flag) }
+    assert klass.arguments[:foo].flag?, "Expected foo to be a flag"
+    refute klass.arguments[:foo].value?, "Expected foo to be a flag, not value"
+  end
+
+  test "description is empty by default" do
+    klass = cmd { required_argument(:foo) }
+    assert_equal "", klass.arguments[:foo].description
+  end
+
+  test "can provide description" do
+    klass = cmd { required_argument(:foo, :description => "Foo") }
+    assert_equal "Foo", klass.arguments[:foo].description
   end
 
 end

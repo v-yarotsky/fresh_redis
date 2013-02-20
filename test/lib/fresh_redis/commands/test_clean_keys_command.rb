@@ -8,6 +8,10 @@ class TestCleanKeys < FreshRedisTestCase
     assert_requires_argument CleanKeysCommand, :key_pattern, ""
   end
 
+  test "has clean_keys as a name" do
+    assert_equal :clean_keys, CleanKeysCommand.name
+  end
+
   #TODO: find better way to test redis interaction
   #TODO: test batching
   #TODO: really test pipelined

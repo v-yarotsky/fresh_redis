@@ -1,3 +1,11 @@
 #!/usr/bin/env ruby
 
-puts "Hello, world"
+require 'fresh_redis/cli'
+
+Signal.trap("SIGINT") do
+  puts "Terminating"
+  exit 1
+end
+
+FreshRedis::Cli.new(ARGV).run!
+

@@ -12,6 +12,10 @@ module FreshRedis
         def description(description)
           @description = description.dup
         end
+
+        def name
+          raise NotImplementedError
+        end
       end
 
       def initialize(arguments = {})
@@ -28,6 +32,14 @@ module FreshRedis
       end
     end
 
+    ##
+    # Creates a base class for command with defined .name method
+    def self.Command(name)
+      Class.new(BaseCommand).tap do |c|
+        c.define_singleton_method(:name) { name.to_sym }
+      end
+    end
   end
+
 end
 
