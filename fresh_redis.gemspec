@@ -8,7 +8,7 @@ Gem::Specification.new do |gem|
   gem.version       = FreshRedis::VERSION
   gem.authors       = ["Vladimir Yarotsky"]
   gem.email         = ["vladimir.yarotsky@gmail.com"]
-  gem.description   = %q{An utility for Redis maintenance}
+  gem.summary   = %q{An utility for Redis maintenance}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($/)
