@@ -4,9 +4,7 @@ require 'fresh_redis/commands/clean_keys_command'
 include FreshRedis::Commands
 
 class TestCleanKeys < FreshRedisTestCase
-  test "requires key_pattern argument to be present" do
-    assert_requires_argument CleanKeysCommand, :key_pattern, ""
-  end
+  test "requires key_pattern argument to be present"
 
   test "has clean_keys as a name" do
     assert_equal :clean_keys, CleanKeysCommand.name
@@ -24,7 +22,7 @@ class TestCleanKeys < FreshRedisTestCase
       def del(key); (@removed_keys ||= []) << key; end
       def pipelined?; !!@pipelined; end
     end
-    CleanKeysCommand.new(:key_pattern => "test*").run(redis)
+    CleanKeysCommand.new(:key_pattern => "test*", :batch_size => 1).run(redis)
     assert redis.pipelined?
     assert_equal %w(test1 test2), redis.removed_keys
   end

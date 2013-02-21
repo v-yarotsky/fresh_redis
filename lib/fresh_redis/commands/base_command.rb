@@ -1,10 +1,10 @@
-require 'fresh_redis/command_arguments_validation'
+require 'fresh_redis/command_options'
 
 module FreshRedis
   module Commands
 
     class BaseCommand
-      include CommandArgumentsValidation
+      extend CommandOptions
 
       class << self
         attr_reader :description
@@ -18,8 +18,8 @@ module FreshRedis
         end
       end
 
-      def initialize(arguments = {})
-        self.arguments = arguments
+      def initialize(attributes = {})
+        @attributes = attributes
       end
 
       def description

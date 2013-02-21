@@ -1,12 +1,11 @@
 require 'fresh_redis/commands'
-require 'fresh_redis/command_optparse_decorator'
 require 'optparse'
 require 'redis'
 
 module FreshRedis
 
   class Cli
-    SUBCOMMANDS = Hash[Commands.commands.map { |c| [c.name, CommandOptparseDecorator.decorate(c)] }]
+    SUBCOMMANDS = Hash[Commands.commands.map { |c| [c.name, c] }]
 
     def initialize(args)
       @args = args.dup
@@ -17,8 +16,7 @@ module FreshRedis
       command_name = @args.shift or raise ArgumentError, "Specify command"
       subcommand = subcommands[command_name.to_sym] or raise ArgumentError, "Unknown command: #{command_name}"
 
-      command_options = subcommand.parse_options!(@args)
-      subcommand.new(command_options).run(redis)
+      subcommand.new_from_args(@args).run(redis)
     rescue SystemExit
       # Do nothing
     rescue Exception => e
